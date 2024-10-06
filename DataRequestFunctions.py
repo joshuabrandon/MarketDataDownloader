@@ -1,7 +1,7 @@
 from Connections import *
 import requests
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 from datetime import datetime
 
 # Docs for this API: https://www.alphavantage.co/documentation/
@@ -30,6 +30,8 @@ def valid_request_check(data):
     if next(iter(data)) == "Error Message":
         print("Invalid API call, check requested ticker.")
         return
+    elif next(iter(data)) == "API Limit": # need to confirm what this error message is to handle appropriately
+        pass
     else:
         print("Valid request.")
 
@@ -85,10 +87,6 @@ def daily_historial_data_request(ticker, outputsize='compact'):
     df = df.rename(columns=column_mapping)
     df['date'] = pd.to_datetime(df['date']).dt.date
 
-    # Build connection string to database and create query engine
-    connection_string = build_connection_string()
-    engine = create_engine(connection_string)
-
     # Filter to only insert new records
     filter_query = f"SELECT MAX(date) FROM {table_name} WHERE Ticker = '{ticker}'"
     df_query_results = pd.DataFrame(engine.connect().execute(text(filter_query)))
@@ -104,10 +102,6 @@ def daily_historial_data_request(ticker, outputsize='compact'):
     # Append dataframe data to database table
     filtered_df.to_sql(table_name, engine, if_exists='append', index=False)
     print(f"Load complete for ticker: {ticker}")
-    
-    # Close engine
-    engine.dispose()
-    print("Engine closed.")
 
 def top_gainers_losers_traded_request():
     # API Documentation: https://www.alphavantage.co/documentation/#gainer-loser
@@ -134,10 +128,6 @@ def top_gainers_losers_traded_request():
     losers_df = format_top_glt_df(data['top_losers'], 'top_loser', request_date)
     actives_df = format_top_glt_df(data['most_actively_traded'], 'most_active', request_date)
 
-    # Build connection string to database and create query engine
-    connection_string = build_connection_string()
-    engine = create_engine(connection_string)
-
     # Filter to only insert new records
     filter_query = f"SELECT MAX(update_datetime) FROM {table_name}"
     df_query_results = pd.DataFrame(engine.connect().execute(text(filter_query)))
@@ -153,7 +143,3 @@ def top_gainers_losers_traded_request():
     # Append dataframe data to database table
     combined_df.to_sql(table_name, engine, if_exists='append', index=False)
     print(f"Load complete for gainers, losers, and most active data.")
-    
-    # Close engine
-    engine.dispose()
-    print("Engine closed.")

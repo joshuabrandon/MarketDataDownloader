@@ -1,5 +1,6 @@
 import psycopg2
 from psycopg2 import sql
+from sqlalchemy import create_engine
 
 def read_credentials(file_path):
     credentials = {}
@@ -119,3 +120,11 @@ def build_connection_string():
     database = conn_params["dbname"]
     connection_string = f'postgresql://{user}:{password}@{host}:{port}/{database}'
     return connection_string
+
+def dispose_engine(engine):
+    engine.dispose()
+    print("Engine closed.")
+
+# Connection variables
+connection_string = build_connection_string()
+engine = create_engine(connection_string)
