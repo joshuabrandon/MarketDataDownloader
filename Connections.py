@@ -110,3 +110,12 @@ def delete_data(conn, user_id):
         cur.close()
     except Exception as e:
         print(f"Error deleting data: {e}")
+
+def build_connection_string():
+    user = conn_params["user"]
+    password = conn_params["password"]
+    host = conn_params["host"]
+    port = conn_params["port"]
+    database = conn_params["dbname"]
+    connection_string = f'postgresql://{user}:{password}@{host}:{port}/{database}'
+    return connection_string
