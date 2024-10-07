@@ -89,7 +89,9 @@ def daily_historial_data_request(ticker, outputsize='compact'):
 
     # Filter to only insert new records
     filter_query = f"SELECT MAX(date) FROM {table_name} WHERE Ticker = '{ticker}'"
-    df_query_results = pd.DataFrame(engine.connect().execute(text(filter_query)))
+    with engine.connect() as conn:
+        result = conn.execute(text(filter_query))
+        df_query_results = pd.DataFrame(result.fetchall(), columns=result.keys())
     max_date = df_query_results['max'].item()
 
     if max_date is not None:
@@ -100,7 +102,8 @@ def daily_historial_data_request(ticker, outputsize='compact'):
     filtered_df
 
     # Append dataframe data to database table
-    filtered_df.to_sql(table_name, engine, if_exists='append', index=False)
+    with engine.connect() as conn:
+        filtered_df.to_sql(table_name, con=conn, if_exists='append', index=False)
     print(f"Load complete for ticker: {ticker}")
 
 def top_gainers_losers_traded_request():
@@ -130,7 +133,8 @@ def top_gainers_losers_traded_request():
 
     # Filter to only insert new records
     filter_query = f"SELECT MAX(update_datetime) FROM {table_name}"
-    df_query_results = pd.DataFrame(engine.connect().execute(text(filter_query)))
+    with engine.connect() as conn:
+        df_query_results = pd.DataFrame(conn.execute(text(filter_query)))
     max_date = df_query_results['max'].item()
 
     if request_date <= max_date and max_date is not None:
@@ -141,5 +145,6 @@ def top_gainers_losers_traded_request():
     combined_df = pd.concat([gainers_df, losers_df, actives_df], ignore_index=True)
 
     # Append dataframe data to database table
-    combined_df.to_sql(table_name, engine, if_exists='append', index=False)
+    with engine.connect() as conn:
+        combined_df.to_sql(table_name, con=conn, if_exists='append', index=False)
     print(f"Load complete for gainers, losers, and most active data.")
